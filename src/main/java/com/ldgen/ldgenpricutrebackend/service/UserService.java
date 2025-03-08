@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.ldgen.ldgenpricutrebackend.model.vo.LoginUserVO;
 import com.ldgen.ldgenpricutrebackend.model.vo.UserVO;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -87,5 +86,14 @@ public interface UserService extends IService<User> {
 
 
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
+
+
+    /**
+     * 判断是否为管理员
+     *
+     * @param user
+     * @return
+     */
+    boolean isAdmin(User user);
 
 }
