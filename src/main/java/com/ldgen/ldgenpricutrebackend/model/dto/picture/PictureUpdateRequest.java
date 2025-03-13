@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * 更新图片请求
+ * @author 15385
  */
 @Data
 public class PictureUpdateRequest implements Serializable {
@@ -35,6 +36,7 @@ public class PictureUpdateRequest implements Serializable {
      * 标签
      */
     private List<String> tags;
+
 
     private static final long serialVersionUID = 1L;
 }
