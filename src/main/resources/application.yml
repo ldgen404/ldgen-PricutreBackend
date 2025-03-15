@@ -2,10 +2,26 @@ server:
   port: 8123
   servlet:
     context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
 spring:
   application:
     name: ldgen-picture-backend
+  profiles:
+    active: local
   #    开放更大的上传体积
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    timeout: 5000
+  # session 配置
+  session:
+    store-type: redis
+    # session 30 天过期
+    timeout: 2592000
   servlet:
     multipart:
       max-file-size: 10MB
@@ -42,3 +58,4 @@ knife4j:
           - com.ldgen.ldgenpricutrebackend.controller
 
 #对象存储配置已经配置
+

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
+import com.ldgen.ldgenpricutrebackend.manager.CosManager;
 import com.ldgen.ldgenpricutrebackend.manager.FileManager;
 import com.ldgen.ldgenpricutrebackend.manager.upload.FilePictureUpload;
 import com.ldgen.ldgenpricutrebackend.manager.upload.PictureUploadTemplate;
@@ -32,6 +33,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -64,6 +66,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
+
+    @Resource
+    private CosManager cosManager;
 
     /**
      * 上传或更新图片
@@ -108,6 +113,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 构造要入库的图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
+
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picName = pictureUploadRequest.getPicName();
@@ -134,6 +141,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setCreateTime(new Date());
         }
 
+        // todo:扩展点
+        //this.cleanPictureFile(oldPice);
         boolean result = this.saveOrUpdate(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
 
@@ -376,6 +385,34 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         return uploadCount;
+    }
+
+
+    /**
+     * 清理图片
+     *
+     * @param oldPicture
+     */
+    @Async //异步执行
+    @Override
+    public void cleanPictureFile(Picture oldPicture) {
+        //判断该图片是否被多条记录使用
+        String pictureUrl = oldPicture.getUrl();
+        Long count = this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+        if (count > 1) {
+            //大于一说明被多条记录使用
+            return;
+        }
+        //删除图片
+        cosManager.deleteObject(pictureUrl);
+        //删除压缩图
+        String thumbnailUrl = oldPicture.getThumbnailUrl();
+        if (StrUtil.isNotBlank(thumbnailUrl)) {
+            cosManager.deleteObject(thumbnailUrl);
+        }
+
     }
 
 
