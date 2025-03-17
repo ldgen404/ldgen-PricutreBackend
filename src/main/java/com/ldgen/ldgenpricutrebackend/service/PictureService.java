@@ -3,14 +3,12 @@ package com.ldgen.ldgenpricutrebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ldgen.ldgenpricutrebackend.model.dto.picture.PictureQueryRequest;
-import com.ldgen.ldgenpricutrebackend.model.dto.picture.PictureReviewRequest;
-import com.ldgen.ldgenpricutrebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.ldgen.ldgenpricutrebackend.model.dto.picture.PictureUploadRequest;
+import com.ldgen.ldgenpricutrebackend.model.dto.picture.*;
 import com.ldgen.ldgenpricutrebackend.model.entity.Picture;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
 import com.ldgen.ldgenpricutrebackend.model.vo.PictureVO;
 import io.swagger.models.auth.In;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -92,6 +90,33 @@ public interface PictureService extends IService<Picture> {
      *
      * @param oldPicture
      */
+    @Async
     void cleanPictureFile(Picture oldPicture);
+
+
+    /**
+     * 同一的权限校验
+     *
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 编辑图片
+     *
+     * @param pictureEditRequest
+     * @param loginUser
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId
+     * @param loginUser
+     */
+    void deletePicture(long pictureId, User loginUser);
+
 
 }

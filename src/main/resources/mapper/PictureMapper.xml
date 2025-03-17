@@ -18,6 +18,7 @@
         <result property="picScale" column="picScale" jdbcType="DOUBLE"/>
         <result property="picFormat" column="picFormat" jdbcType="VARCHAR"/>
         <result property="userId" column="userId" jdbcType="BIGINT"/>
+        <result property="spaceId" column="spaceId" jdbcType="BIGINT"/>
         <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
         <result property="editTime" column="editTime" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
@@ -30,7 +31,7 @@
 
     <sql id="Base_Column_List">
         id
-        ,url,thumbnailUrl,name,
+        ,url,thumbnailUrl,name,spaceId,
         introduction,category,tags,
         picSize,picWidth,picHeight,
         picScale,picFormat,userId,

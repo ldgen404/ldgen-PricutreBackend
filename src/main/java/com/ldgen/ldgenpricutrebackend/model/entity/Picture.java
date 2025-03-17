@@ -19,6 +19,11 @@ public class Picture implements Serializable {
      */
     @TableId(type = IdType.AUTO)
     private Long id;
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
+
 
     /**
      * 图片 url
