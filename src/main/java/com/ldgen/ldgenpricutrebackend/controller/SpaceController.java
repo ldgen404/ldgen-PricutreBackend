@@ -9,14 +9,11 @@ import com.ldgen.ldgenpricutrebackend.constant.UserConstant;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
-import com.ldgen.ldgenpricutrebackend.model.dto.picture.*;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.*;
-import com.ldgen.ldgenpricutrebackend.model.entity.Picture;
 import com.ldgen.ldgenpricutrebackend.model.entity.Space;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
 import com.ldgen.ldgenpricutrebackend.model.enums.SpaceLevelEnum;
 import com.ldgen.ldgenpricutrebackend.model.vo.SpaceVO;
-import com.ldgen.ldgenpricutrebackend.service.PictureService;
 import com.ldgen.ldgenpricutrebackend.service.SpaceService;
 import com.ldgen.ldgenpricutrebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -56,8 +51,7 @@ public class SpaceController {
     }
 
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest
-            , HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -121,19 +115,39 @@ public class SpaceController {
     /**
      * 根据 id 获取空间（封装类）
      */
-//    @GetMapping("/get/vo")
-//    public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
-//        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-//        // 查询数据库
-//        Space space = spaceService.getById(id);
-//        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-//        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
-//        User loginUser = userService.getLoginUser(request);
-//        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
-//        spaceVO.setPermissionList(permissionList);
-//        // 获取封装类
-//        return ResultUtils.success(spaceVO);
-//    }
+    @GetMapping("/get/vo")
+    public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 2. 查询空间信息
+        Space space = spaceService.getById(id);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 3. 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+
+        // 4. 权限校验（替代 spaceUserAuthManager）
+        List<String> permissionList = new ArrayList<>();
+
+        // 情况1：如果是空间创建者，拥有全部权限
+        if (space.getUserId().equals(loginUser.getId())) {
+            permissionList = Arrays.asList("read", "write", "delete", "manage");
+        }
+        // 情况2：如果是管理员，也拥有全部权限
+        else if (userService.isAdmin(loginUser)) {
+            permissionList = Arrays.asList("read", "write", "delete", "manage");
+        }
+        // 情况3：普通用户（或其他情况），只给读权限
+        else {
+            permissionList = Collections.singletonList("read");
+        }
+        // 5. 封装返回数据
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        spaceVO.setPermissionList(permissionList);
+
+        return ResultUtils.success(spaceVO);
+    }
 
     /**
      * 分页获取空间列表（仅管理员可用）
@@ -144,8 +158,7 @@ public class SpaceController {
         long current = spaceQueryRequest.getCurrent();
         long size = spaceQueryRequest.getPageSize();
         // 查询数据库
-        Page<Space> spacePage = spaceService.page(new Page<>(current, size),
-                spaceService.getQueryWrapper(spaceQueryRequest));
+        Page<Space> spacePage = spaceService.page(new Page<>(current, size), spaceService.getQueryWrapper(spaceQueryRequest));
         return ResultUtils.success(spacePage);
     }
 
@@ -153,15 +166,13 @@ public class SpaceController {
      * 分页获取空间列表（封装类）
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<SpaceVO>> listSpaceVOByPage(@RequestBody SpaceQueryRequest spaceQueryRequest,
-                                                         HttpServletRequest request) {
+    public BaseResponse<Page<SpaceVO>> listSpaceVOByPage(@RequestBody SpaceQueryRequest spaceQueryRequest, HttpServletRequest request) {
         long current = spaceQueryRequest.getCurrent();
         long size = spaceQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 查询数据库
-        Page<Space> spacePage = spaceService.page(new Page<>(current, size),
-                spaceService.getQueryWrapper(spaceQueryRequest));
+        Page<Space> spacePage = spaceService.page(new Page<>(current, size), spaceService.getQueryWrapper(spaceQueryRequest));
         // 获取封装类
         return ResultUtils.success(spaceService.getSpaceVOPage(spacePage, request));
     }
@@ -203,16 +214,16 @@ public class SpaceController {
      */
     @GetMapping("/list/level")
     public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
-        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values())
+        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values()) // 获取所有枚举
                 .map(spaceLevelEnum -> new SpaceLevel(
                         spaceLevelEnum.getValue(),
                         spaceLevelEnum.getText(),
                         spaceLevelEnum.getMaxCount(),
-                        spaceLevelEnum.getMaxSize()
-                ))
+                        spaceLevelEnum.getMaxSize()))
                 .collect(Collectors.toList());
         return ResultUtils.success(spaceLevelList);
     }
+
 }
 
 

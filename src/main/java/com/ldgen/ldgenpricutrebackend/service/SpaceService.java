@@ -18,6 +18,13 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface SpaceService extends IService<Space> {
 
+    /**
+     * 创建空间服务
+     *
+     * @param spaceAddRequest
+     * @param loginUser
+     * @return
+     */
     long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
 
     /***
@@ -30,7 +37,7 @@ public interface SpaceService extends IService<Space> {
 
 
     /**
-     * 获取空间包装了
+     * 根据空间级别填充空间对象
      *
      * @param space
      */

@@ -5,14 +5,15 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
+import com.ldgen.ldgenpricutrebackend.mapper.SpaceMapper;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.SpaceAddRequest;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.SpaceQueryRequest;
 import com.ldgen.ldgenpricutrebackend.model.entity.Space;
-import com.ldgen.ldgenpricutrebackend.mapper.SpaceMapper;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
 import com.ldgen.ldgenpricutrebackend.model.enums.SpaceLevelEnum;
 import com.ldgen.ldgenpricutrebackend.model.vo.SpaceVO;
@@ -21,21 +22,18 @@ import com.ldgen.ldgenpricutrebackend.service.SpaceService;
 import com.ldgen.ldgenpricutrebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * @author 15385
+ * @author 李鱼皮
  * @description 针对表【space(空间)】的数据库操作Service实现
- * @createDate 2025-03-15 22:52:53
+ * @createDate 2024-12-18 19:53:34
  */
 @Service
 public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
@@ -43,8 +41,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
     @Resource
     private TransactionTemplate transactionTemplate;
+    Map<Long, Object> lockMap = new ConcurrentHashMap<>();
 
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
@@ -68,29 +68,33 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         if (SpaceLevelEnum.COMMON.getValue() != spaceAddRequest.getSpaceLevel() && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限创建指定级别的空间");
         }
+
         // 针对用户进行加锁
-        String lock = String.valueOf(userId).intern();
-        synchronized (lock) {
-            Long newSpaceId = transactionTemplate.execute(status -> {
-                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
-                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户仅能有一个私有空间");
-                // 写入数据库
-                boolean result = this.save(space);
-                ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-                // 返回新写入的数据 id
-                return space.getId();
-            });
-            // 返回结果是包装类，可以做一些处理
-            return Optional.ofNullable(newSpaceId).orElse(-1L);
+//        String lock = String.valueOf(userId).intern();
+        Object lock = lockMap.computeIfAbsent(userId, key -> new Object());
+        try {
+            synchronized (lock) {
+                Long newSpaceId = transactionTemplate.execute(status -> {
+                    boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
+                    ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户仅能有一个私有空间");
+                    // 写入数据库
+                    boolean result = this.save(space);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+                    // 返回新写入的数据 id
+                    return space.getId();
+                });
+                // 返回结果是包装类，可以做一些处理
+                return Optional.ofNullable(newSpaceId).orElse(-1L);
+            }
+        } finally {
+            // 防止内存泄漏
+            lockMap.remove(userId);
+
         }
+
     }
 
-    /***
-     * 增加空间
-     *
-     * @param space
-     * @param add 是否为创建是校验
-     */
+
     @Override
     public void validSpace(Space space, boolean add) {
         ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR);
@@ -138,9 +142,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             return spaceVOPage;
         }
         // 对象列表 => 封装对象列表
-        List<SpaceVO> spaceVOList = spaceList.stream().map(SpaceVO::objToVo).collect(Collectors.toList());
+        List<SpaceVO> spaceVOList = spaceList.stream()
+                .map(SpaceVO::objToVo)
+                .collect(Collectors.toList());
         // 1. 关联查询用户信息
+        // 1,2,3,4
         Set<Long> userIdSet = spaceList.stream().map(Space::getUserId).collect(Collectors.toSet());
+        // 1 => user1, 2 => user2
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
         // 2. 填充信息
@@ -156,7 +164,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         return spaceVOPage;
     }
 
-
     @Override
     public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest) {
         QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
@@ -170,15 +177,17 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
         String sortField = spaceQueryRequest.getSortField();
         String sortOrder = spaceQueryRequest.getSortOrder();
+        // 拼接查询条件
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
+
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
-
     }
+
 
     /**
      * @param space
@@ -200,12 +209,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     }
 
 
-    /**
-     * 修改空间
-     *
-     * @param loginUser
-     * @param space
-     */
     @Override
     public void checkSpaceAuth(User loginUser, Space space) {
         // 仅本人或管理员可编辑
@@ -213,9 +216,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
     }
-
 }
-
-
 
 

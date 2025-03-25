@@ -24,7 +24,6 @@ public class Picture implements Serializable {
      */
     private Long spaceId;
 
-
     /**
      * 图片 url
      */

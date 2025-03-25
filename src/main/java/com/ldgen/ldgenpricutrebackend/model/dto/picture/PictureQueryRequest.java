@@ -13,11 +13,13 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class PictureQueryRequest extends PageRequest implements Serializable {
+public class  PictureQueryRequest extends PageRequest implements Serializable {
+
     /**
      * id
      */
     private Long id;
+
 
     /**
      * 图片名称
