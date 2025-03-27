@@ -102,6 +102,7 @@ public class Picture implements Serializable {
 
     /**
      * 是否删除
+     * 0-删除 1-存在
      */
     @TableLogic //逻辑删除
     private Integer isDelete;

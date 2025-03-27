@@ -27,6 +27,7 @@ public interface PictureService extends IService<Picture> {
      */
     PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
+
     /**
      * 批量上传图片
      *
