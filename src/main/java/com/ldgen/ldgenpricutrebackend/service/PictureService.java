@@ -10,6 +10,7 @@ import com.ldgen.ldgenpricutrebackend.model.vo.PictureVO;
 import org.springframework.scheduling.annotation.Async;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 图片服务接口，提供对图片的增删改查、审核、上传等功能
@@ -117,4 +118,6 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser 当前操作用户
      */
     void deletePicture(long pictureId, User loginUser);
+
+    List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser);
 }
