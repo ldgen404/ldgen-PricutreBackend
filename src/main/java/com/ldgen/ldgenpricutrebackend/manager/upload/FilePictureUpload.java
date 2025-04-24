@@ -10,9 +10,18 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 使用模板方法设计模式：实现文件上传功能
+ * @author 15385
+ */
 @Service
-public class FilePictureUpload extends PictureUploadTemplate {  
-  
+public class FilePictureUpload extends PictureUploadTemplate {
+
+    /**
+     * 校验输入源（本地文件或 URL）
+     *
+     * @param inputSource
+     */
     @Override  
     protected void validPicture(Object inputSource) {  
         MultipartFile multipartFile = (MultipartFile) inputSource;  

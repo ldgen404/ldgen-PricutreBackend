@@ -58,4 +58,6 @@ knife4j:
           - com.ldgen.ldgenpricutrebackend.controller
 
 #对象存储配置已经配置
+#阿里云百炼配置
+
 

@@ -48,7 +48,6 @@ public class LoginUserVO implements Serializable {
      * 用户角色：user/admin
      */
     private String userRole;
-
     /**
      * 创建时间
      */

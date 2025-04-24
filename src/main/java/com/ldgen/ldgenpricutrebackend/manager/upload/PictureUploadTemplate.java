@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * 使用了模板方法设计模式
  * 图片上传模板
  */
 @Slf4j
@@ -35,6 +36,7 @@ public abstract class PictureUploadTemplate {
 
     /**
      * 模板方法，定义上传流程
+     * 校验图片
      */
     public final UploadPictureResult uploadPicture(Object inputSource, String uploadPathPrefix) {
         // 1. 校验图片
@@ -42,6 +44,7 @@ public abstract class PictureUploadTemplate {
 
         // 2. 图片上传地址
         String uuid = RandomUtil.randomString(16);
+        // 获取原始文件名
         String originFilename = getOriginFilename(inputSource);
         String uploadFilename = String.format("%s_%s.%s", DateUtil.formatDate(new Date()), uuid,
                 FileUtil.getSuffix(originFilename));
@@ -51,9 +54,9 @@ public abstract class PictureUploadTemplate {
         try {
             // 创建临时文件
             file = File.createTempFile(uploadPath, null);
-            // 处理文件来源（本地或 URL）
+            // 处理文件来源（本地或 URL） 处理为临时文件
             processFile(inputSource, file);
-            // 上传图片到对象存储
+            // 上传图片到对象存储 =》上传到 COS
             PutObjectResult putObjectResult = cosManager.putPictureObject(uploadPath, file);
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
@@ -157,14 +160,3 @@ public abstract class PictureUploadTemplate {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-

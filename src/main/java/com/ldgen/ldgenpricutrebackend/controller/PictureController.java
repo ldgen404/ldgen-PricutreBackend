@@ -1,10 +1,14 @@
 package com.ldgen.ldgenpricutrebackend.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ldgen.ldgenpricutrebackend.annotation.AuthCheck;
+import com.ldgen.ldgenpricutrebackend.api.aliyunAI.AliYunAiApi;
+import com.ldgen.ldgenpricutrebackend.api.aliyunAI.model.CreateOutPaintingTaskResponse;
+import com.ldgen.ldgenpricutrebackend.api.aliyunAI.model.GetOutPaintingTaskResponse;
 import com.ldgen.ldgenpricutrebackend.api.imagesearch.ImageSearchApiFacade;
 import com.ldgen.ldgenpricutrebackend.api.imagesearch.model.ImageSearchResult;
 import com.ldgen.ldgenpricutrebackend.common.BaseResponse;
@@ -57,6 +61,9 @@ public class PictureController {
     // 空间服务
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private AliYunAiApi aliYunAiApi;
 
     // Redis模板
     @Resource
@@ -313,10 +320,12 @@ public class PictureController {
         return ResultUtils.success(uploadCount);
     }
 
-//    以图搜图
 
     /**
-     * 以图搜图
+     * 以图搜图接口
+     *
+     * @param searchPictureByPictureRequest
+     * @return
      */
     @PostMapping("/search/picture")
     public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
@@ -330,7 +339,6 @@ public class PictureController {
     }
 
     /**
-     *
      * @param searchPictureByColorRequest
      * @param request
      * @return
@@ -345,5 +353,43 @@ public class PictureController {
         return ResultUtils.success(result);
     }
 
+    /**
+     * @param pictureEditByBatchRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * 创建 AI 扩图任务
+     *
+     * @return
+     */
+    public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(@RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
+                                                                                    HttpServletRequest request) {
+        // 校验
+        if (createPictureOutPaintingTaskRequest == null || createPictureOutPaintingTaskRequest.getPictureId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        CreateOutPaintingTaskResponse response = pictureService.createPictureOutPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+        return ResultUtils.success(response);
+    }
+
+    /**
+     * 查询 AI 扩图任务
+     */
+    @GetMapping("/out_painting/get_task")
+    public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ThrowUtils.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAMS_ERROR);
+        GetOutPaintingTaskResponse task = aliYunAiApi.getOutPaintingTask(taskId);
+        return ResultUtils.success(task);
+    }
 
 }

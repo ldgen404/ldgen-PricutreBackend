@@ -24,9 +24,10 @@ public class GetImageFirstUrlApi {
         try {
             // 使用 Jsoup 获取 HTML 内容
             Document document = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
+                    .referrer("https://graph.baidu.com")
                     .timeout(5000)
                     .get();
-            // 获取所有 <script> 标签
             Elements scriptElements = document.getElementsByTag("script");
 
             // 遍历找到包含 `firstUrl` 的脚本内容
