@@ -80,7 +80,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     private SpaceService spaceService;
     @Resource
     private TransactionTemplate transactionTemplate;
-    
+
     @Resource
     private AliYunAiApi aliYunAiApi;
 //    但如果要处理大量数据，可以使用线程池 + 分批 + 并发进行优化

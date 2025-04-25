@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * @author 李鱼皮
+ * @author 李大根
  * @description 针对表【space(空间)】的数据库操作Service实现
  * @createDate 2024-12-18 19:53:34
  */
@@ -209,9 +209,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     }
 
 
+    /**
+     * 空间权限校验
+     *
+     * @param loginUser
+     * @param space
+     */
     @Override
     public void checkSpaceAuth(User loginUser, Space space) {
-        // 仅本人或管理员可编辑
+        // 仅本人或管理员可访问
         if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }

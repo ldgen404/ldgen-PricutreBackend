@@ -371,6 +371,7 @@ public class PictureController {
      *
      * @return
      */
+    @PostMapping("/out_painting/create_task")
     public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(@RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
                                                                                     HttpServletRequest request) {
         // 校验
