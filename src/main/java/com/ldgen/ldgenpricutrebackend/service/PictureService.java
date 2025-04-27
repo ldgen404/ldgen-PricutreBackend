@@ -65,6 +65,8 @@ public interface PictureService extends IService<Picture> {
      */
     PictureVO getPictureVO(Picture picture, HttpServletRequest request);
 
+    Page<PictureVO> listPictureVOByPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
+
     /**
      * 获取图片的分页封装对象（用于前端分页展示）
      *

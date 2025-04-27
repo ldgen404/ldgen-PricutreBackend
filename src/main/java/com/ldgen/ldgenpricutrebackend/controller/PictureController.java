@@ -90,7 +90,7 @@ public class PictureController {
      * @return 图片VO对象
      */
     @PostMapping("/upload")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)  // 仅管理员可访问
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)  // 仅管理员可访问
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -246,9 +246,8 @@ public class PictureController {
      * 分页查询图片VO列表（带权限检查）
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PictureVO>> listPictureVOByPage(
-            @RequestBody PictureQueryRequest pictureQueryRequest,
-            HttpServletRequest request) {
+    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                             HttpServletRequest request) {
         // 参数校验
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
@@ -271,10 +270,8 @@ public class PictureController {
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
             }
         }
-
         // 查询并返回结果
-        Page<Picture> picturePage = pictureService.page(
-                new Page<>(current, size),
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }

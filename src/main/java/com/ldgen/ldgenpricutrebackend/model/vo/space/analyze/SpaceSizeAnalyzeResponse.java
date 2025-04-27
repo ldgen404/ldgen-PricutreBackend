@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 空间大小分析vo类
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

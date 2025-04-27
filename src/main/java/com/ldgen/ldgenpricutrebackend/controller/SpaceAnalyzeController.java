@@ -7,10 +7,7 @@ import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.analyze.*;
 import com.ldgen.ldgenpricutrebackend.model.entity.Space;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
-import com.ldgen.ldgenpricutrebackend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
-import com.ldgen.ldgenpricutrebackend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
-import com.ldgen.ldgenpricutrebackend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
-import com.ldgen.ldgenpricutrebackend.model.vo.space.analyze.SpaceUserAnalyzeResponse;
+import com.ldgen.ldgenpricutrebackend.model.vo.space.analyze.*;
 import com.ldgen.ldgenpricutrebackend.service.SpaceAnalyzeService;
 import com.ldgen.ldgenpricutrebackend.service.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -108,6 +105,14 @@ public class SpaceAnalyzeController {
         ThrowUtils.throwIf(spaceRankAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         List<Space> resultList = spaceAnalyzeService.getSpaceRankAnalyze(spaceRankAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+
+    @PostMapping("/size")
+    public BaseResponse<List<SpaceSizeAnalyzeResponse>> getSpaceSizeAnalyze(@RequestBody SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceSizeAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        List<SpaceSizeAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceSizeAnalyze(spaceSizeAnalyzeRequest, loginUser);
         return ResultUtils.success(resultList);
     }
 

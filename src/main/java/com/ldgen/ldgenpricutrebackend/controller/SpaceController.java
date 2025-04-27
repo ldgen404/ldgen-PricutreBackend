@@ -42,6 +42,13 @@ public class SpaceController {
     private SpaceService spaceService;
 
 
+    /**
+     * 添加空间
+     *
+     * @param spaceAddRequest
+     * @param request
+     * @return
+     */
     @PostMapping("/add")
     public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceAddRequest == null, ErrorCode.PARAMS_ERROR);
@@ -50,6 +57,13 @@ public class SpaceController {
         return ResultUtils.success(newId);
     }
 
+    /**
+     * 删除空间
+     *
+     * @param deleteRequest
+     * @param request
+     * @return
+     */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {

@@ -327,7 +327,28 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     }
 
     /**
+     * @param pictureQueryRequest
+     * @param request
+     * @return
+     */
+    @Override
+    public Page<PictureVO> listPictureVOByPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+
+        // 1. 构建分页对象
+        Page<Picture> picturePage = this.page(new Page<>(current, size), getQueryWrapper(pictureQueryRequest));
+
+        // 2. 转 VO 并返回
+        return getPictureVOPage(picturePage, request);
+    }
+
+    /**
      * 分页获取图片封装
+     *
+     * @param picturePage 分页查询结果
+     * @param request     HTTP 请求信息
+     * @return
      */
     @Override
     public Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request) {
@@ -337,10 +358,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             return pictureVOPage;
         }
         // 对象列表 => 封装对象列表
-        List<PictureVO> pictureVOList = pictureList.stream().map(PictureVO::objToVo).collect(Collectors.toList());
+        List<PictureVO> pictureVOList = pictureList.stream()
+                .map(PictureVO::objToVo)
+                .collect(Collectors.toList());
         // 1. 关联查询用户信息
+        // 1,2,3,4
         Set<Long> userIdSet = pictureList.stream().map(Picture::getUserId).collect(Collectors.toSet());
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        // 1 => user1, 2 => user2
+        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
+                .collect(Collectors.groupingBy(User::getId));
         // 2. 填充信息
         pictureVOList.forEach(pictureVO -> {
             Long userId = pictureVO.getUserId();
@@ -351,6 +377,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             pictureVO.setUser(userService.getUserVO(user));
         });
         pictureVOPage.setRecords(pictureVOList);
+        System.out.println("Total records: " + picturePage.getTotal());
         return pictureVOPage;
     }
 
