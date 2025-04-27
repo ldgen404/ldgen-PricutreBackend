@@ -112,14 +112,11 @@
             <artifactId>sa-token-spring-boot-starter</artifactId>
             <version>1.42.0</version>
         </dependency>
-
-<!--        <dependency>-->
-        <!--            <groupId>org.redisson</groupId>-->
-        <!--            <artifactId>redisson-spring-boot-starter</artifactId>-->
-        <!--            <version>3.31.0</version> &lt;!&ndash; 使用最新版本 &ndash;&gt;-->
-        <!--        </dependency>-->
-
-
+        <!-- 提供Redis连接池 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

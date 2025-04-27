@@ -100,6 +100,7 @@ public interface PictureService extends IService<Picture> {
     void cleanPictureFile(Picture oldPicture);
 
     /**
+     * 已经使用Sa-Token注解鉴权方法废弃
      * 统一的权限校验，防止未授权操作
      *
      * @param loginUser 当前用户
