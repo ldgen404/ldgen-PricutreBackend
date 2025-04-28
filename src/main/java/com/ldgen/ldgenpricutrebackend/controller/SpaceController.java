@@ -9,6 +9,7 @@ import com.ldgen.ldgenpricutrebackend.constant.UserConstant;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
+import com.ldgen.ldgenpricutrebackend.manager.auth.SpaceUserAuthManager;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.*;
 import com.ldgen.ldgenpricutrebackend.model.entity.Space;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
@@ -40,6 +41,9 @@ public class SpaceController {
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
 
     /**
@@ -131,35 +135,15 @@ public class SpaceController {
      */
     @GetMapping("/get/vo")
     public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
-        // 1. 参数校验
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-
-        // 2. 查询空间信息
+        // 查询数据库
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-
-        // 3. 获取当前登录用户
-        User loginUser = userService.getLoginUser(request);
-
-        // 4. 权限校验（替代 spaceUserAuthManager）
-        List<String> permissionList = new ArrayList<>();
-
-        // 情况1：如果是空间创建者，拥有全部权限
-        if (space.getUserId().equals(loginUser.getId())) {
-            permissionList = Arrays.asList("read", "write", "delete", "manage");
-        }
-        // 情况2：如果是管理员，也拥有全部权限
-        else if (userService.isAdmin(loginUser)) {
-            permissionList = Arrays.asList("read", "write", "delete", "manage");
-        }
-        // 情况3：普通用户（或其他情况），只给读权限
-        else {
-            permissionList = Collections.singletonList("read");
-        }
-        // 5. 封装返回数据
         SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         spaceVO.setPermissionList(permissionList);
-
+        // 获取封装类
         return ResultUtils.success(spaceVO);
     }
 

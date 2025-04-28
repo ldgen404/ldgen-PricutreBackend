@@ -62,6 +62,12 @@ public class SpaceVO implements Serializable {
     private Long userId;
 
     /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
+
+
+    /**
      * 创建时间
      */
     private Date createTime;
@@ -84,7 +90,6 @@ public class SpaceVO implements Serializable {
     /**
      * 权限列表
      */
-    private List<String> permissionList = new ArrayList<>();
 
     private static final long serialVersionUID = 1L;
 

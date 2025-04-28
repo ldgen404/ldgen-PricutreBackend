@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
+import com.ldgen.ldgenpricutrebackend.manager.sharding.DynamicShardingManager;
 import com.ldgen.ldgenpricutrebackend.mapper.SpaceMapper;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.SpaceAddRequest;
 import com.ldgen.ldgenpricutrebackend.model.dto.space.SpaceQueryRequest;
@@ -25,6 +26,7 @@ import com.ldgen.ldgenpricutrebackend.service.SpaceService;
 import com.ldgen.ldgenpricutrebackend.service.SpaceUserService;
 import com.ldgen.ldgenpricutrebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -48,6 +50,11 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private SpaceUserService spaceUserService;
+
+//    可选分库分表
+//    @Resource
+//    @Lazy
+//    private DynamicShardingManager dynamicShardingManager;
 
 
     @Resource
@@ -117,6 +124,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                         result = spaceUserService.save(spaceUser);
                         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                     }
+                    //方便部署取消分库分表
+                    // 创建分表
+                    //dynamicShardingManager.createSpacePictureTable(space);
                     // 返回新写入的数据 id
                     return space.getId();
                 });

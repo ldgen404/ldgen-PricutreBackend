@@ -1,6 +1,11 @@
 package com.ldgen.ldgenpricutrebackend.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
+import com.ldgen.ldgenpricutrebackend.common.BaseResponse;
+import com.ldgen.ldgenpricutrebackend.common.ResultUtils;
 import lombok.Getter;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Getter
 public class BusinessException extends RuntimeException {
@@ -24,5 +29,7 @@ public class BusinessException extends RuntimeException {
         super(message);
         this.code = errorCode.getCode();
     }
+
+
 
 }

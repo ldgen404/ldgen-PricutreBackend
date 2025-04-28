@@ -18,17 +18,20 @@ import com.ldgen.ldgenpricutrebackend.constant.UserConstant;
 import com.ldgen.ldgenpricutrebackend.exception.BusinessException;
 import com.ldgen.ldgenpricutrebackend.exception.ErrorCode;
 import com.ldgen.ldgenpricutrebackend.exception.ThrowUtils;
+import com.ldgen.ldgenpricutrebackend.manager.auth.SpaceUserAuthManager;
+import com.ldgen.ldgenpricutrebackend.manager.auth.StpKit;
 import com.ldgen.ldgenpricutrebackend.manager.auth.annotation.SaSpaceCheckPermission;
 import com.ldgen.ldgenpricutrebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.ldgen.ldgenpricutrebackend.model.dto.picture.*;
 import com.ldgen.ldgenpricutrebackend.model.entity.Picture;
 import com.ldgen.ldgenpricutrebackend.model.entity.Space;
+import com.ldgen.ldgenpricutrebackend.model.entity.SpaceUser;
 import com.ldgen.ldgenpricutrebackend.model.entity.User;
 import com.ldgen.ldgenpricutrebackend.model.enums.PictureReviewStatusEnum;
-import com.ldgen.ldgenpricutrebackend.model.enums.SpaceRoleEnum;
 import com.ldgen.ldgenpricutrebackend.model.vo.PictureTagCategory;
 import com.ldgen.ldgenpricutrebackend.model.vo.PictureVO;
 import com.ldgen.ldgenpricutrebackend.service.PictureService;
+import com.ldgen.ldgenpricutrebackend.service.SpaceAnalyzeService;
 import com.ldgen.ldgenpricutrebackend.service.SpaceService;
 import com.ldgen.ldgenpricutrebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -68,9 +71,13 @@ public class PictureController {
     @Resource
     private AliYunAiApi aliYunAiApi;
 
-    // Redis模板
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private SpaceUserAuthManager spaceUserAuthManager;
+
+
+    // Redis模板
+//    @Resource
+//    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 本地缓存（Caffeine实现）
@@ -213,25 +220,29 @@ public class PictureController {
      * 根据ID获取图片VO（包含处理后的数据）
      */
     @GetMapping("/get/vo")
-    public BaseResponse<PictureVO> getPictureVOById(
-            long id,
-            HttpServletRequest request) {
+    public BaseResponse<PictureVO> getPictureVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-
-        // 查询图片
+        // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
-
-        // 检查空间权限（如果是私有空间）
+        // 空间的图片，需要校验权限
+        Space space = null;
         Long spaceId = picture.getSpaceId();
         if (spaceId != null) {
-            User loginUser = userService.getLoginUser(request);
-            //使用Sa-Token注解鉴权
-            //pictureService.checkPictureAuth(loginUser, picture);
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
         }
-
-        return ResultUtils.success(pictureService.getPictureVO(picture, request));
+        // 获取权限列表
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        PictureVO pictureVO = pictureService.getPictureVO(picture, request);
+        pictureVO.setPermissionList(permissionList);
+        // 获取封装类
+        return ResultUtils.success(pictureVO);
     }
+
 
     // ------------------------ 列表API ------------------------
 
@@ -268,6 +279,8 @@ public class PictureController {
         Long spaceId = pictureQueryRequest.getSpaceId();
         if (spaceId == null) {
             // 公开图库：只查已过审数据
+            // 普通用户默认只能查看已过审的公开数据
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
             pictureQueryRequest.setNullSpaceId(true);
         } else {
             // 私有空间：检查权限
